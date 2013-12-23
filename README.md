@@ -7,7 +7,9 @@ if (INCLUDE_MOZSVC)
 endif()
 
 加入
+
 add_external_plugin(git https://github.com/jbli/heka_plugin b26829487b668837b2964d81917bfde446fd4ff4)
+
 
 重新编译
 source build.sh
