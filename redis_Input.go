@@ -41,7 +41,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         var decoding chan<- *pipeline.PipelinePack
         if ri.conf.Decoder != "" {
                 // Fetch specified decoder
-                decoder, ok := h.DecoderSet().ByName(ri.conf.Decoder)
+                decoder, ok :=  h.DecoderRunner(ri.conf.Decoder)
                 if !ok {
                         err := fmt.Errorf("Could not find decoder", ri.conf.Decoder)
                         return err
