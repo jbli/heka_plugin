@@ -28,7 +28,7 @@ func (ro *RedisMQOutput) Init(config interface{}) error {
 func (ro *RedisMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
         var outgoing string
         for pack := range or.InChan() {
-                outgoing = fmt.Sprintf("%s\n", pack.Message.GetPayload())
+                outgoing = fmt.Sprintf("%s", pack.Message.GetPayload())
                 ro.rdqueue.Put(outgoing)
                 pack.Recycle()
         }
