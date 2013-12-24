@@ -27,7 +27,7 @@ func (ri *RedisMQInput) Init(config interface{}) error {
         var err error
         ri.conf = config.(*RedisMQOutputConfig)
         ri.rdqueue := redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
-        ri.rdconsumer, err = testQueue.AddConsumer("testconsumer")
+        ri.rdconsumer, err = ri.rdqueue.AddConsumer("testconsumer")
         if err != nil {
                 panic(err)
         }
