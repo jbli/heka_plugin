@@ -30,7 +30,7 @@ func (ro *RedisMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) 
         for pack := range or.InChan() {
                 outgoing = fmt.Sprintf("%s\n", pack.Message.GetPayload())
                 ro.rdqueue.Put(outgoing)
-                pack.Pack.Recycle()
+                pack.Recycle()
         }
 
         return nil
