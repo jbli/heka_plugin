@@ -15,6 +15,7 @@ type RedisMQInput struct {
         conf            *RedisMQInputConfig
         rdqueue         *redismq.Queue
         rdconsumer      *redismq.Consumer
+        stopped         bool
 }
 
 func (ri *RedisMQInput) ConfigStruct() interface{} {
@@ -58,7 +59,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         var err error
 
         // Read data from websocket broadcast chan
-        for {
+        for !ri.stopped {
                 p, err = ri.rdconsumer.Get()
                 if err != nil {
                         ir.LogError(err)
@@ -92,6 +93,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
 }
 
 func (ri *RedisMQInput) Stop() {
+       ri.stopped = true
 }
 
 func init() {
