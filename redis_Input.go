@@ -91,6 +91,9 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         return nil
 }
 
+func (ri *RedisMQInput) Stop() {
+}
+
 func init() {
         pipeline.RegisterPlugin("RedisMQInput", func() interface{} {
                 return new(RedisMQInput)
