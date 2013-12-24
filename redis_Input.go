@@ -68,7 +68,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
                 if err != nil {
                         ir.LogError(err)
                 }
-                b = p.Payload
+                b = []byte(p.Payload)
                 // Grab an empty PipelinePack from the InputRunner
                 pack = <-packs
 
