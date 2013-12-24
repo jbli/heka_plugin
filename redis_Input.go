@@ -15,7 +15,7 @@ type RedisMQInput struct {
         conf            *RedisMQInputConfig
         rdqueue         *redismq.Queue
         rdconsumer      *redismq.Consumer
-        stopped         bool
+        stopChan        chan bool
 }
 
 func (ri *RedisMQInput) ConfigStruct() interface{} {
@@ -93,7 +93,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
 }
 
 func (ri *RedisMQInput) Stop() {
-       ri.stopped = true
+       close(t.stopChan)
 }
 
 func init() {
