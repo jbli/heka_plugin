@@ -21,7 +21,7 @@ func (ro *RedisMQOutput) ConfigStruct() interface{} {
 
 func (ro *RedisMQOutput) Init(config interface{}) error {
         ro.conf = config.(*RedisMQOutputConfig)
-        ro.rdqueue := redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
+        ro.rdqueue = redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
         return nil
 }
 
