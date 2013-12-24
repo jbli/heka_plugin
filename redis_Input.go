@@ -25,8 +25,8 @@ func (ri *RedisMQInput) Init(config interface{}) error {
         ri.conf = config.(*RedisMQInputConfig)
 
         var err error
-        ro.conf = config.(*RedisMQOutputConfig)
-        ro.rdqueue := redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
+        ri.conf = config.(*RedisMQOutputConfig)
+        ri.rdqueue := redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
         ri.rdconsumer, err = testQueue.AddConsumer("testconsumer")
         if err != nil {
                 panic(err)
@@ -52,18 +52,23 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         }
 
         var pack *pipeline.PipelinePack
+        var p *redismq.Package
         var count int
         var b []byte
         var err error
 
         // Read data from websocket broadcast chan
         for {
-                b, err = ri.rdconsumer.Get()
+                p, err = ri.rdconsumer.Get()
                 if err != nil {
                         ir.LogError(err)
                         continue
                 }
-
+                err = p.Ack()
+                if err != nil {
+                        ir.LogError(err)
+                }
+                b = p.Payload
                 // Grab an empty PipelinePack from the InputRunner
                 pack = <-packs
 
