@@ -26,16 +26,11 @@ func (ro *RedisMQOutput) Init(config interface{}) error {
 }
 
 func (ro *RedisMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
-        defer func() {
-        }()
-
-        var b []byte
-        var p [][]byte
-        for pc := range or.InChan() {
-                b = pc.Pack.MsgBytes
-                p = [][]byte{nil, b}
-                ro.rdqueue.Put(p)
-                pc.Pack.Recycle()
+        var outgoing string
+        for pack := range or.InChan() {
+                outgoing = fmt.Sprintf("%s\n", pack.Message.GetPayload())
+                ro.rdqueue.Put(outgoing)
+                pack.Pack.Recycle()
         }
 
         return nil
