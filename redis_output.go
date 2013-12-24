@@ -12,28 +12,21 @@ type RedisMQOutputConfig struct {
 
 type RedisMQOutput struct {
         conf    *RedisMQOutputConfig
-        context *redismq.Context
-        socket  *redismq.Socket
+        rdqueue *redismq.Queue
 }
 
 func (ro *RedisMQOutput) ConfigStruct() interface{} {
-        return &RedisMQOutputConfig{":6379"}
+        return &RedisMQOutputConfig{"192.168.1.44"}
 }
 
 func (ro *RedisMQOutput) Init(config interface{}) error {
         ro.conf = config.(*RedisMQOutputConfig)
-
-        var err error
-        testQueue := redismq.CreateQueue("192.168.1.44", "6379", "", 9, "clicks")
-        
-
+        ro.rdqueue := redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
         return nil
 }
 
-func (zo *ZeroMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
+func (ro *RedisMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
         defer func() {
-                zo.socket.Close()
-                zo.context.Close()
         }()
 
         var b []byte
@@ -41,7 +34,7 @@ func (zo *ZeroMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) e
         for pc := range or.InChan() {
                 b = pc.Pack.MsgBytes
                 p = [][]byte{nil, b}
-                zo.socket.SendMultipart(p, 0)
+                ro.rdqueue.Put(p)
                 pc.Pack.Recycle()
         }
 
@@ -49,7 +42,7 @@ func (zo *ZeroMQOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) e
 }
 
 func init() {
-        pipeline.RegisterPlugin("ZeroMQOutput", func() interface{} {
-                return new(ZeroMQOutput)
+        pipeline.RegisterPlugin("RedisMQOutput", func() interface{} {
+                return new(RedisMQOutput)
         })
 }
