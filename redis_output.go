@@ -12,7 +12,7 @@ type RedisMQOutputConfig struct {
 
 type RedisMQOutput struct {
         conf    *RedisMQOutputConfig
-        rdqueue *redismq.Queue
+        rdqueue *redismq.BufferedQueue
 }
 
 func (ro *RedisMQOutput) ConfigStruct() interface{} {
@@ -25,7 +25,7 @@ func (ro *RedisMQOutput) Init(config interface{}) error {
         server.Start()
         
         ro.rdqueue = redismq.CreateBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
-        err := testQueue.Start()
+        err := ro.rdqueue.Start()
         if err != nil {
                 panic(err)
         }
