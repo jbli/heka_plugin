@@ -62,11 +62,42 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         }
 
         var pack *pipeline.PipelinePack
-        var p []*redismq.Package
+        //var p []*redismq.Package
+        var p *redismq.Package
         var count int
         var b []byte
         var err error
+        
+        for {
+                p, err = ri.rdconsumer.Get()
+                if err != nil {
+                        ir.LogError(err)
+                        continue
+                }
+                err = p.Ack()
+                if err != nil {
+                        ir.LogError(err)
+                }
+                b = []byte(p.Payload)
+                // Grab an empty PipelinePack from the InputRunner
+                pack = <-packs
 
+                // Trim the excess empty bytes
+                count = len(b)
+                pack.MsgBytes = pack.MsgBytes[:count]
+
+                // Copy ws bytes into pack's bytes
+                copy(pack.MsgBytes, b)
+
+                if decoding != nil {
+                        // Send pack onto decoder
+                        decoding <- pack
+                } else {
+                        // Send pack into Heka pipeline
+                        ir.Inject(pack)
+                }
+        }
+/*
         checkStat := time.Tick(ri.statInterval)
         ok := true
         for ok {
@@ -105,7 +136,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
                     }
                 }
         }
-
+*/
         return nil
 }
 
