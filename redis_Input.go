@@ -96,6 +96,7 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
                         // Send pack into Heka pipeline
                         ir.Inject(pack)
                     }
+                }
         }
 
         return nil
