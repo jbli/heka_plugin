@@ -15,7 +15,8 @@ type RedisMQInputConfig struct {
 
 type RedisMQInput struct {
         conf            *RedisMQInputConfig
-        rdqueue         *redismq.BufferedQueue
+        //rdqueue         *redismq.BufferedQueue
+        rdqueue         *redismq.Queue
         rdconsumer      *redismq.Consumer
         stopChan        chan bool
         statInterval     time.Duration
@@ -31,20 +32,15 @@ func (ri *RedisMQInput) Init(config interface{}) error {
         ri.statInterval = time.Millisecond * time.Duration(statInterval)
         ri.stopChan = make(chan bool)
         var err error
-        ri.rdqueue, err = redismq.SelectBufferedQueue(ri.conf.Address, "6379", "", 9, "example", 200)
+        ri.rdqueue, err = redismq.SelectQueue(ri.conf.Address, "6379", "", 9, "clicks")
         if err != nil {
-           ri.rdqueue = redismq.CreateBufferedQueue(ri.conf.Address, "6379", "", 9, "example", 200)
-           err = ri.rdqueue.Start()
-           if err != nil {
-                panic(err)
-           }
+                ri.rdqueue = redismq.CreateQueue(ri.conf.Address, "6379", "", 9, "clicks")
         }
         
         ri.rdconsumer, err = ri.rdqueue.AddConsumer("testconsumer")
         if err != nil {
                 panic(err)
         }
-        ri.rdconsumer.ResetWorking()
         return nil
 }
 
