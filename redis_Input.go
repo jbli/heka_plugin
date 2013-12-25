@@ -32,11 +32,11 @@ func (ri *RedisMQInput) Init(config interface{}) error {
         ri.statInterval = time.Millisecond * time.Duration(statInterval)
         ri.stopChan = make(chan bool)
         var err error
-        ri.rdqueue, err = redismq.SelectQueue(ri.conf.Address, "6379", "", 9, "clicks")
-        if err != nil {
-                ri.rdqueue = redismq.CreateQueue(ri.conf.Address, "6379", "", 9, "clicks")
-        }
-        
+        //ri.rdqueue, err = redismq.SelectQueue(ri.conf.Address, "6379", "", 9, "clicks")
+        //if err != nil {
+        //        ri.rdqueue = redismq.CreateQueue(ri.conf.Address, "6379", "", 9, "clicks")
+        //}
+        ri.rdqueue = redismq.CreateQueue(ri.conf.Address, "6379", "", 9, "clicks")
         ri.rdconsumer, err = ri.rdqueue.AddConsumer("testconsumer")
         if err != nil {
                 panic(err)
