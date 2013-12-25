@@ -15,7 +15,7 @@ type RedisMQInputConfig struct {
 
 type RedisMQInput struct {
         conf            *RedisMQInputConfig
-        rdqueue         *redismq.Queue
+        rdqueue         *redismq.BufferedQueue
         rdconsumer      *redismq.Consumer
         stopChan        chan bool
         statInterval     time.Duration
@@ -31,11 +31,16 @@ func (ri *RedisMQInput) Init(config interface{}) error {
         ri.statInterval = time.Millisecond * time.Duration(statInterval)
         ri.stopChan = make(chan bool)
         var err error
-        ri.rdqueue = redismq.CreateQueue(ri.conf.Address, "6379", "", 9, "clicks")
+        ri.rdqueue := redismq.CreateBufferedQueue(ri.conf.Address, "6379", "", 9, "example", 200)
+        err := ri.rdqueue.Start()
+        if err != nil {
+                panic(err)
+        }
         ri.rdconsumer, err = ri.rdqueue.AddConsumer("testconsumer")
         if err != nil {
                 panic(err)
         }
+        ri.rdconsumer.ResetWorking()
         return nil
 }
 
@@ -69,32 +74,34 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
 		case _, ok = <-ri.stopChan:
 			break
 		case <-checkStat:
-                    p, err = ri.rdconsumer.Get()
+                    p, err = ri.rdconsumer.MultiGet(500)
                     if err != nil {
                         ir.LogError(err)
                         continue
                     }
-                    err = p.Ack()
+                    err = p[len(p)-1].MultiAck()
                     if err != nil {
                         ir.LogError(err)
                     }
-                    b = []byte(p.Payload)
-                    // Grab an empty PipelinePack from the InputRunner
-                    pack = <-packs
+                    for _, v := range p {
+                      b = []byte(v.Payload)
+                      // Grab an empty PipelinePack from the InputRunner
+                      pack = <-packs
 
-                    // Trim the excess empty bytes
-                    count = len(b)
-                    pack.MsgBytes = pack.MsgBytes[:count]
+                      // Trim the excess empty bytes
+                      count = len(b)
+                      pack.MsgBytes = pack.MsgBytes[:count]
 
-                    // Copy ws bytes into pack's bytes
-                    copy(pack.MsgBytes, b)
+                      // Copy ws bytes into pack's bytes
+                      copy(pack.MsgBytes, b)
 
-                    if decoding != nil {
+                      if decoding != nil {
                         // Send pack onto decoder
                         decoding <- pack
-                    } else {
+                      } else {
                         // Send pack into Heka pipeline
                         ir.Inject(pack)
+                      }
                     }
                 }
         }
