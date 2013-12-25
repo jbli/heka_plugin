@@ -31,11 +31,15 @@ func (ri *RedisMQInput) Init(config interface{}) error {
         ri.statInterval = time.Millisecond * time.Duration(statInterval)
         ri.stopChan = make(chan bool)
         var err error
-        ri.rdqueue = redismq.CreateBufferedQueue(ri.conf.Address, "6379", "", 9, "example", 200)
-        err = ri.rdqueue.Start()
+        ri.rdqueue, err = redismq.SelectBufferedQueue(ri.conf.Address, "6379", "", 9, "example", 200)
         if err != nil {
+           ri.rdqueue = redismq.CreateBufferedQueue(ri.conf.Address, "6379", "", 9, "example", 200)
+           err = ri.rdqueue.Start()
+           if err != nil {
                 panic(err)
+           }
         }
+        
         ri.rdconsumer, err = ri.rdqueue.AddConsumer("testconsumer")
         if err != nil {
                 panic(err)
