@@ -22,7 +22,7 @@ type RedisMQInput struct {
 }
 
 func (ri *RedisMQInput) ConfigStruct() interface{} {
-        return &RedisMQInputConfig{"192.168.1.44", "",uint(5)}
+        return &RedisMQInputConfig{"192.168.1.44", "",500}
 }
 
 func (ri *RedisMQInput) Init(config interface{}) error {
@@ -63,13 +63,12 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         var err error
 
         checkStat := time.Tick(ri.statInterval)
-        ok :=true
+        ok := true
         for ok {
             select {
 		case _, ok = <-ri.stopChan:
 			break
 		case <-checkStat:
-		
                     p, err = ri.rdconsumer.Get()
                     if err != nil {
                         ir.LogError(err)
