@@ -21,13 +21,16 @@ func (ro *RedisMQOutput) ConfigStruct() interface{} {
 
 func (ro *RedisMQOutput) Init(config interface{}) error {
         ro.conf = config.(*RedisMQOutputConfig)
-        server := redismq.NewServer(ro.conf.Address, "6379", "", 9, "9999")
-        server.Start()
-        
-        ro.rdqueue = redismq.CreateBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
-        err := ro.rdqueue.Start()
+        var err error
+        ro.rdqueue, err = redismq.SelectBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
         if err != nil {
+           //server := redismq.NewServer(ro.conf.Address, "6379", "", 9, "9999")
+           //server.Start()
+           ro.rdqueue = redismq.CreateBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
+           err := ro.rdqueue.Start()
+           if err != nil {
                 panic(err)
+           }
         }
         return nil
 }
