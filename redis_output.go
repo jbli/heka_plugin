@@ -12,7 +12,8 @@ type RedisMQOutputConfig struct {
 
 type RedisMQOutput struct {
         conf    *RedisMQOutputConfig
-        rdqueue *redismq.BufferedQueue
+        //rdqueue *redismq.BufferedQueue
+        rdqueue *redismq.Queue
 }
 
 func (ro *RedisMQOutput) ConfigStruct() interface{} {
@@ -22,15 +23,17 @@ func (ro *RedisMQOutput) ConfigStruct() interface{} {
 func (ro *RedisMQOutput) Init(config interface{}) error {
         ro.conf = config.(*RedisMQOutputConfig)
         var err error
-        ro.rdqueue, err = redismq.SelectBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
+        //ro.rdqueue, err = redismq.SelectBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
+        ro.rdqueue, err = redismq.SelectQueue(ro.conf.Address, "6379", "", 9, "clicks")
         if err != nil {
            //server := redismq.NewServer(ro.conf.Address, "6379", "", 9, "9999")
            //server.Start()
-           ro.rdqueue = redismq.CreateBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
-           err := ro.rdqueue.Start()
-           if err != nil {
-                panic(err)
-           }
+           //ro.rdqueue = redismq.CreateBufferedQueue(ro.conf.Address, "6379", "", 9, "example", 200)
+           //err := ro.rdqueue.Start()
+           //if err != nil {
+           //     panic(err)
+           //}
+           ro.rdqueue = redismq.CreateQueue(ro.conf.Address, "6379", "", 9, "clicks")
         }
         return nil
 }
