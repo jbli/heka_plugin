@@ -4,11 +4,13 @@ import (
         "fmt"
         "github.com/adeven/redismq"
         "github.com/mozilla-services/heka/pipeline"
+        "time"
 )
 
 type RedisMQInputConfig struct {
         Address string `toml:"address"`
         Decoder string `toml:"decoder"`
+        StatInterval int `toml:"stat_interval"`
 }
 
 type RedisMQInput struct {
@@ -16,17 +18,19 @@ type RedisMQInput struct {
         rdqueue         *redismq.Queue
         rdconsumer      *redismq.Consumer
         stopChan        chan bool
+        statInterval     time.Duration
 }
 
 func (ri *RedisMQInput) ConfigStruct() interface{} {
-        return &RedisMQInputConfig{"192.168.1.44", ""}
+        return &RedisMQInputConfig{"192.168.1.44", "",uint(5)}
 }
 
 func (ri *RedisMQInput) Init(config interface{}) error {
         ri.conf = config.(*RedisMQInputConfig)
-
+        statInterval := ri.conf.StatInterval
+        ri.statInterval = time.Millisecond * time.Duration(statInterval)
+        ri.stopChan = make(chan bool)
         var err error
-        ri.conf = config.(*RedisMQInputConfig)
         ri.rdqueue = redismq.CreateQueue(ri.conf.Address, "6379", "", 9, "clicks")
         ri.rdconsumer, err = ri.rdqueue.AddConsumer("testconsumer")
         if err != nil {
@@ -58,42 +62,48 @@ func (ri *RedisMQInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) er
         var b []byte
         var err error
 
-        // Read data from websocket broadcast chan
-        for !ri.stopped {
-                p, err = ri.rdconsumer.Get()
-                if err != nil {
+        checkStat := time.Tick(ri.statInterval)
+        ok :=true
+        for ok {
+            select {
+		case _, ok = <-ri.stopChan:
+			break
+		case <-checkStat:
+		
+                    p, err = ri.rdconsumer.Get()
+                    if err != nil {
                         ir.LogError(err)
                         continue
-                }
-                err = p.Ack()
-                if err != nil {
+                    }
+                    err = p.Ack()
+                    if err != nil {
                         ir.LogError(err)
-                }
-                b = []byte(p.Payload)
-                // Grab an empty PipelinePack from the InputRunner
-                pack = <-packs
+                    }
+                    b = []byte(p.Payload)
+                    // Grab an empty PipelinePack from the InputRunner
+                    pack = <-packs
 
-                // Trim the excess empty bytes
-                count = len(b)
-                pack.MsgBytes = pack.MsgBytes[:count]
+                    // Trim the excess empty bytes
+                    count = len(b)
+                    pack.MsgBytes = pack.MsgBytes[:count]
 
-                // Copy ws bytes into pack's bytes
-                copy(pack.MsgBytes, b)
+                    // Copy ws bytes into pack's bytes
+                    copy(pack.MsgBytes, b)
 
-                if decoding != nil {
+                    if decoding != nil {
                         // Send pack onto decoder
                         decoding <- pack
-                } else {
+                    } else {
                         // Send pack into Heka pipeline
                         ir.Inject(pack)
-                }
+                    }
         }
 
         return nil
 }
 
 func (ri *RedisMQInput) Stop() {
-       close(t.stopChan)
+       close(ri.stopChan)
 }
 
 func init() {
