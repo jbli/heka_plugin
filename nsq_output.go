@@ -39,7 +39,7 @@ func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) erro
 }
 
 func init() {
-        pipeline.RegisterPlugin("RedisMQOutput", func() interface{} {
-                return new(RedisMQOutput)
+        pipeline.RegisterPlugin("NsqOutput", func() interface{} {
+                return new(NsqOutput)
         })
 }
