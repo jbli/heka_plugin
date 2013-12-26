@@ -26,7 +26,6 @@ func (no *NsqOutput) Init(config interface{}) error {
 }
 
 func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
-        var outgoing string
         for pack := range or.InChan() {
                 err := no.nsqwriter.PublishAsync("test", []byte(pack.Message.GetPayload()),nil)
                 if err != nil{
