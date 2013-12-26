@@ -28,7 +28,7 @@ func (no *NsqOutput) Init(config interface{}) error {
 func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
         var outgoing string
         for pack := range or.InChan() {
-                err := writer.PublishAsync("test", []byte(pack.Message.GetPayload()),nil)
+                err := no.nsqwriter.PublishAsync("test", []byte(pack.Message.GetPayload()),nil)
                 if err != nil{
                   or.LogError(fmt.Errorf("error in writer.PublishAsync"))
                 }
