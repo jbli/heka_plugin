@@ -2,6 +2,7 @@ package examples
 
 import (
 	"fmt"
+	"bytes"
 	nsq "github.com/bitly/go-nsq"
 	"github.com/mozilla-services/heka/message"
 	"github.com/mozilla-services/heka/pipeline"
