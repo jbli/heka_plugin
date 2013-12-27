@@ -7,7 +7,7 @@ import (
 )
 
 type Message struct {
-        *nsq.Message
+        msg *nsq.Message
         returnChannel chan *nsq.FinishedMessage
 }
 
@@ -84,7 +84,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	for {
 		pack = <-packs
                 m := <-ni.handler.logChan
-		b = []byte(m.Body)
+		b = []byte(m.msg.Body)
 		// Grab an empty PipelinePack from the InputRunner
 
 		// Trim the excess empty bytes
