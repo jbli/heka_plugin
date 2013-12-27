@@ -156,7 +156,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 			for pos > 0 {
 				pos--
 				m1 := output[pos]
-				m1.returnChannel <- &nsq.FinishedMessage{m1.Id, 0, true}
+				m1.returnChannel <- &nsq.FinishedMessage{m1.msg.Id, 0, true}
 				output[pos] = nil
 			}
 		}
