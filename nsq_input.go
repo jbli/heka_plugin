@@ -119,6 +119,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		}
 		*/
 		m := <-ni.handler.logChan
+		ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
 		_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
 		if msgOk {
 			decoding <- pack
