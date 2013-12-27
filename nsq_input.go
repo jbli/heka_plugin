@@ -1,9 +1,10 @@
 package examples
 
 import (
-	"bytes"
-	"errors"
+	//"bytes"
+	//"errors"
 	"fmt"
+	"time"
 	nsq "github.com/bitly/go-nsq"
 	//"github.com/mozilla-services/heka/message"
 	"github.com/mozilla-services/heka/pipeline"
@@ -132,7 +133,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		pack.Message.SetTimestamp(time.Now().UnixNano())
 		var packs []*pipeline.PipelinePack
 		if decoder == nil {
-			packs = []*PipelinePack{pack}
+			packs = []*pipeline.PipelinePack{pack}
 		} else {
 			packs, e = decoder.Decode(pack)
 		}
