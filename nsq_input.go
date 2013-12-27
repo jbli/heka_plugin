@@ -3,14 +3,14 @@ package examples
 import (
 	"fmt"
 	nsq "github.com/bitly/go-nsq"
+	"github.com/mozilla-services/heka/message"
 	"github.com/mozilla-services/heka/pipeline"
 )
 
 type Message struct {
-        msg *nsq.Message
-        returnChannel chan *nsq.FinishedMessage
+	msg           *nsq.Message
+	returnChannel chan *nsq.FinishedMessage
 }
-
 
 type NsqInputConfig struct {
 	Address string `toml:"address"`
@@ -48,18 +48,44 @@ func (ni *NsqInput) Init(config interface{}) error {
 		panic(err)
 	}
 	ni.nsqReader.SetMaxInFlight(1000)
-	ni.handler = &MyTestHandler{ logChan:         make(chan *Message)}
+	ni.handler = &MyTestHandler{logChan: make(chan *Message)}
 	ni.nsqReader.AddAsyncHandler(ni.handler)
 	return nil
+}
+
+func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
+	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
+	if pos != -1 {
+		if len(buf)-pos > 1 {
+			headerLength := int(buf[pos+1])
+			headerEnd := pos + headerLength + 3 // recsep+len+header+unitsep
+			if len(buf) >= headerEnd {
+				if header.MessageLength != nil || DecodeHeader(buf[pos+2:headerEnd], header) {
+					messageEnd := headerEnd + int(header.GetMessageLength())
+					if len(buf) >= messageEnd {
+						*msg = (*msg)[:messageEnd-headerEnd]
+						copy(*msg, buf[headerEnd:messageEnd])
+						pos = messageEnd
+						ok = true
+					} else {
+						*msg = (*msg)[:0]
+					}
+				} else {
+					pos, ok = findMessage(buf[pos+1:], header, msg)
+				}
+			}
+		}
+	} else {
+		pos = len(buf)
+	}
+	return
 }
 
 func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error {
 	// Get the InputRunner's chan to receive empty PipelinePacks
 	var pack *pipeline.PipelinePack
-	var count int
-	var b []byte
 	var err error
-	
+
 	packs := ir.InChan()
 
 	var decoding chan<- *pipeline.PipelinePack
@@ -75,35 +101,40 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		decoding = decoder.InChan()
 	}
 	err = ni.nsqReader.ConnectToLookupd("192.168.1.44:4161")
-        if err != nil {
+	if err != nil {
 		fmt.Errorf("ConnectToLookupd failed")
-        }
+	}
 
+	header := &message.Header{}
 
-
-//readLoop:
+	//readLoop:
 	for {
 		pack = <-packs
-                m := <-ni.handler.logChan
-		b = []byte(m.msg.Body)
-		// Grab an empty PipelinePack from the InputRunner
-
-		// Trim the excess empty bytes
-		count = len(b)
-		pack.MsgBytes = pack.MsgBytes[:count]
-
-		// Copy ws bytes into pack's bytes
-		copy(pack.MsgBytes, b)
-
-		if decoding != nil {
-			// Send pack onto decoder
+		if decoder == nil {
+			pack.Recycle()
+			ir.LogError(errors.New("require a decoder."))
+		}
+		m := <-ni.handler.logChan
+		_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
+		if msgOk {
 			decoding <- pack
 		} else {
-			// Send pack into Heka pipeline
-			ir.Inject(pack)
+			pack.Recycle()
+			ir.LogError(errors.New("Can't find Heka message."))
 		}
+		header.Reset()
 	}
 	return nil
+}
+
+func (ni *NsqInput) Stop() {
+	close(ni.stopChan)
+}
+
+func init() {
+	pipeline.RegisterPlugin("NsqInput", func() interface{} {
+		return new(NsqInput)
+	})
 }
 
 func (ni *NsqInput) Stop() {
