@@ -1,11 +1,11 @@
 package examples
 
 import (
-	"fmt"
 	"bytes"
 	"errors"
+	"fmt"
 	nsq "github.com/bitly/go-nsq"
-	"github.com/mozilla-services/heka/message"
+	//"github.com/mozilla-services/heka/message"
 	"github.com/mozilla-services/heka/pipeline"
 )
 
@@ -87,13 +87,16 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	// Get the InputRunner's chan to receive empty PipelinePacks
 	var pack *pipeline.PipelinePack
 	var err error
+	var decoder Decoder
+	var ok bool
+	var e error
 
-	packs := ir.InChan()
+	packSupply := ir.InChan()
 
 	var decoding chan<- *pipeline.PipelinePack
 	if ni.conf.Decoder != "" {
 		// Fetch specified decoder
-		decoder, ok := h.DecoderRunner(ni.conf.Decoder)
+		decoder, ok = h.DecoderRunner(ni.conf.Decoder)
 		if !ok {
 			err := fmt.Errorf("Could not find decoder", ni.conf.Decoder)
 			return err
@@ -107,27 +110,43 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		fmt.Errorf("ConnectToLookupd failed")
 	}
 
-	header := &message.Header{}
+	//header := &message.Header{}
 
 	//readLoop:
 	for {
-		pack = <-packs
-		/*
-		if decoder == nil {
-			pack.Recycle()
-			ir.LogError(errors.New("require a decoder."))
-		}
-		*/
+		pack = <-packSupply
 		m := <-ni.handler.logChan
 		ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
-		_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
-		if msgOk {
-			decoding <- pack
+		pack.Message.SetType("nsq")
+		pack.Message.SetPayload(string(m.msg.Body))
+		pack.Message.SetTimestamp(time.Now().UnixNano())
+		var packs []*PipelinePack
+		if decoder == nil {
+			packs = []*PipelinePack{pack}
 		} else {
-			pack.Recycle()
-			ir.LogError(errors.New("Can't find Heka message."))
+			packs, e = decoder.Decode(pack)
 		}
-		header.Reset()
+		if packs != nil {
+			for _, p := range packs {
+				ir.Inject(p)
+			}
+		} else {
+			if e != nil {
+				ir.LogError(fmt.Errorf("Couldn't parse AMQP message: %s", m.msg.Body))
+			}
+			pack.Recycle()
+		}
+
+		/*
+			_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
+			if msgOk {
+				decoding <- pack
+			} else {
+				pack.Recycle()
+				ir.LogError(errors.New("Can't find Heka message."))
+			}
+			header.Reset()
+		*/
 	}
 	return nil
 }
