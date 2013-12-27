@@ -11,6 +11,7 @@ type Message struct {
         returnChannel chan *nsq.FinishedMessage
 }
 
+
 type NsqInputConfig struct {
 	Address string `toml:"address"`
 	Decoder string `toml:"decoder"`
@@ -24,7 +25,7 @@ type NsqInput struct {
 }
 
 type MyTestHandler struct {
-	logChan chan *nsq.Message
+	logChan chan *Message
 }
 
 //func (h *MyTestHandler) HandleMessage(message *nsq.Message) error {
