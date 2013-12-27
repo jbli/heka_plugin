@@ -78,7 +78,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 //readLoop:
 	for {
 		pack = <-packs
-                m := <-ni.handler.logChan:
+                m := <-ni.handler.logChan
 		b = []byte(m.Body)
 		// Grab an empty PipelinePack from the InputRunner
 
