@@ -6,6 +6,11 @@ import (
 	"github.com/mozilla-services/heka/pipeline"
 )
 
+type Message struct {
+        *nsq.Message
+        returnChannel chan *nsq.FinishedMessage
+}
+
 type NsqInputConfig struct {
 	Address string `toml:"address"`
 	Decoder string `toml:"decoder"`
@@ -25,7 +30,7 @@ type MyTestHandler struct {
 //func (h *MyTestHandler) HandleMessage(message *nsq.Message) error {
 
 func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	h.logChan <- &nsq.Message{m, responseChannel}
+	h.logChan <- &Message{m, responseChannel}
 }
 
 func (ni *NsqInput) ConfigStruct() interface{} {
