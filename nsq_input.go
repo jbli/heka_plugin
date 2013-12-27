@@ -20,7 +20,7 @@ type NsqInput struct {
 }
 
 type MyTestHandler struct {
-	logChan chan *Message
+	logChan chan *nsq.Message
 }
 
 //func (h *MyTestHandler) HandleMessage(message *nsq.Message) error {
@@ -75,10 +75,10 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	var b []byte
 	var err error
 
-readLoop:
+//readLoop:
 	for {
 		pack = <-packs
-        m := <-ni.handler.logChan:
+                m := <-ni.handler.logChan:
 		b = []byte(m.Body)
 		// Grab an empty PipelinePack from the InputRunner
 
