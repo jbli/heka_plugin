@@ -95,6 +95,8 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	var ok bool
 	var e error
 
+	pos := 0
+	output := make([]*Message, 1000)
 	packSupply := ir.InChan()
 
 	//var decoding chan<- *pipeline.PipelinePack
@@ -148,6 +150,16 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 			pack.Recycle()
 		}
 
+                output[pos] = m
+		pos++
+		if pos == 1000 {
+			for pos > 0 {
+				pos--
+				m1 := output[pos]
+				m1.returnChannel <- &nsq.FinishedMessage{m1.Id, 0, true}
+				output[pos] = nil
+			}
+		}
 		/*
 			_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
 			if msgOk {
