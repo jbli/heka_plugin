@@ -67,7 +67,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	}
 	err = r.ConnectToLookupd("192.168.1.44:4161")
     if err != nil {
-		err := fmt.Errorf("",err.Error())
+		err := fmt.Errorf("ConnectToLookupd failed",err.Error())
     }
 
 	var pack *pipeline.PipelinePack
