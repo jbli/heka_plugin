@@ -3,6 +3,7 @@ package examples
 import (
 	"fmt"
 	"bytes"
+	"errors"
 	nsq "github.com/bitly/go-nsq"
 	"github.com/mozilla-services/heka/message"
 	"github.com/mozilla-services/heka/pipeline"
@@ -61,7 +62,7 @@ func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok b
 			headerLength := int(buf[pos+1])
 			headerEnd := pos + headerLength + 3 // recsep+len+header+unitsep
 			if len(buf) >= headerEnd {
-				if header.MessageLength != nil || DecodeHeader(buf[pos+2:headerEnd], header) {
+				if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {
 					messageEnd := headerEnd + int(header.GetMessageLength())
 					if len(buf) >= messageEnd {
 						*msg = (*msg)[:messageEnd-headerEnd]
@@ -111,10 +112,12 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	//readLoop:
 	for {
 		pack = <-packs
+		/*
 		if decoder == nil {
 			pack.Recycle()
 			ir.LogError(errors.New("require a decoder."))
 		}
+		*/
 		m := <-ni.handler.logChan
 		_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
 		if msgOk {
@@ -126,16 +129,6 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		header.Reset()
 	}
 	return nil
-}
-
-func (ni *NsqInput) Stop() {
-	close(ni.stopChan)
-}
-
-func init() {
-	pipeline.RegisterPlugin("NsqInput", func() interface{} {
-		return new(NsqInput)
-	})
 }
 
 func (ni *NsqInput) Stop() {
