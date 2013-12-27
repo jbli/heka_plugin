@@ -55,6 +55,7 @@ func (ni *NsqInput) Init(config interface{}) error {
 	return nil
 }
 
+/*
 func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
 	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
 	if pos != -1 {
@@ -82,29 +83,38 @@ func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok b
 	}
 	return
 }
+*/
 
 func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error {
 	// Get the InputRunner's chan to receive empty PipelinePacks
 	var pack *pipeline.PipelinePack
 	var err error
-	var decoder Decoder
+	var dRunner pipeline.DecoderRunner
+	var decoder pipeline.Decoder
 	var ok bool
 	var e error
 
 	packSupply := ir.InChan()
 
-	var decoding chan<- *pipeline.PipelinePack
+	//var decoding chan<- *pipeline.PipelinePack
 	if ni.conf.Decoder != "" {
-		// Fetch specified decoder
-		decoder, ok = h.DecoderRunner(ni.conf.Decoder)
-		if !ok {
-			err := fmt.Errorf("Could not find decoder", ni.conf.Decoder)
-			return err
+		if dRunner, ok = h.DecoderRunner(ni.conf.Decoder); !ok {
+			return fmt.Errorf("Decoder not found: %s", ni.conf.Decoder)
 		}
-
-		// Get the decoder's receiving chan
-		decoding = decoder.InChan()
+		decoder = dRunner.Decoder()
 	}
+	/*
+			// Fetch specified decoder
+			decoder, ok = h.DecoderRunner(ni.conf.Decoder)
+			if !ok {
+				err := fmt.Errorf("Could not find decoder", ni.conf.Decoder)
+				return err
+			}
+
+			// Get the decoder's receiving chan
+			//decoding = decoder.InChan()
+		}
+	*/
 	err = ni.nsqReader.ConnectToLookupd("192.168.1.44:4161")
 	if err != nil {
 		fmt.Errorf("ConnectToLookupd failed")
@@ -120,7 +130,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		pack.Message.SetType("nsq")
 		pack.Message.SetPayload(string(m.msg.Body))
 		pack.Message.SetTimestamp(time.Now().UnixNano())
-		var packs []*PipelinePack
+		var packs []*pipeline.PipelinePack
 		if decoder == nil {
 			packs = []*PipelinePack{pack}
 		} else {
