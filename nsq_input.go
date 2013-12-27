@@ -44,7 +44,7 @@ func (ni *NsqInput) Init(config interface{}) error {
 		panic(err)
 	}
 	ni.nsqReader.SetMaxInFlight(1000)
-	ni.handler = new MyTestHandler{ logChan:         make(chan *nsq.Message)}
+	ni.handler = &MyTestHandler{ logChan:         make(chan *nsq.Message)}
 	ni.nsqReader.AddAsyncHandler(ni.handler)
 	return nil
 }
