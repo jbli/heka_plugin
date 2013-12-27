@@ -4,7 +4,6 @@ import (
 	"fmt"
 	nsq "github.com/bitly/go-nsq"
 	"github.com/mozilla-services/heka/pipeline"
-	"time"
 )
 
 type NsqInputConfig struct {
@@ -26,8 +25,7 @@ type MyTestHandler struct {
 //func (h *MyTestHandler) HandleMessage(message *nsq.Message) error {
 
 func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	h.logChan <- &Message{m, responseChannel}
-	return nil
+	h.logChan <- &nsq.Message{m, responseChannel}
 }
 
 func (ni *NsqInput) ConfigStruct() interface{} {
@@ -51,6 +49,11 @@ func (ni *NsqInput) Init(config interface{}) error {
 
 func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error {
 	// Get the InputRunner's chan to receive empty PipelinePacks
+	var pack *pipeline.PipelinePack
+	var count int
+	var b []byte
+	var err error
+	
 	packs := ir.InChan()
 
 	var decoding chan<- *pipeline.PipelinePack
@@ -65,15 +68,12 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		// Get the decoder's receiving chan
 		decoding = decoder.InChan()
 	}
-	err = r.ConnectToLookupd("192.168.1.44:4161")
-    if err != nil {
-		err := fmt.Errorf("ConnectToLookupd failed",err.Error())
-    }
+	err = ni.nsqReader.ConnectToLookupd("192.168.1.44:4161")
+        if err != nil {
+		fmt.Errorf("ConnectToLookupd failed")
+        }
 
-	var pack *pipeline.PipelinePack
-	var count int
-	var b []byte
-	var err error
+
 
 //readLoop:
 	for {
@@ -101,7 +101,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 }
 
 func (ni *NsqInput) Stop() {
-	close(ri.stopChan)
+	close(ni.stopChan)
 }
 
 func init() {
