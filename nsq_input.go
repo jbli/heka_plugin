@@ -95,7 +95,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	var ok bool
 	var e error
 
-	pos := 0
+	//pos := 0
 	//output := make([]*Message, 2)
 	packSupply := ir.InChan()
 
