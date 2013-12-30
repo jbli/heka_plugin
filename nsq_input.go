@@ -1,13 +1,13 @@
 package examples
 
 import (
-	//"bytes"
+	"bytes"
 	//"errors"
 	"fmt"
-	"time"
 	nsq "github.com/bitly/go-nsq"
-	//"github.com/mozilla-services/heka/message"
+	"github.com/mozilla-services/heka/message"
 	"github.com/mozilla-services/heka/pipeline"
+	"time"
 )
 
 type Message struct {
@@ -16,8 +16,10 @@ type Message struct {
 }
 
 type NsqInputConfig struct {
-	Address string `toml:"address"`
-	Decoder string `toml:"decoder"`
+	Address   string `toml:"address"`
+	Topic     string `toml:"topic"`
+	Serialize bool   `toml:"serialize"`
+	Decoder   string `toml:"decoder"`
 }
 
 type NsqInput struct {
@@ -31,14 +33,17 @@ type MyTestHandler struct {
 	logChan chan *Message
 }
 
-//func (h *MyTestHandler) HandleMessage(message *nsq.Message) error {
-
 func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
 	h.logChan <- &Message{m, responseChannel}
 }
 
 func (ni *NsqInput) ConfigStruct() interface{} {
-	return &NsqInputConfig{"192.168.1.44:4161", ""}
+	return &NsqInputConfig{
+		Address:   "192.168.1.44:4160",
+		Topic:     "test",
+		Serialize: "true",
+		Decoder:   "ProtobufDecoder",
+	}
 }
 
 func (ni *NsqInput) Init(config interface{}) error {
@@ -56,7 +61,6 @@ func (ni *NsqInput) Init(config interface{}) error {
 	return nil
 }
 
-/*
 func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
 	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
 	if pos != -1 {
@@ -84,7 +88,6 @@ func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok b
 	}
 	return
 }
-*/
 
 func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error {
 	// Get the InputRunner's chan to receive empty PipelinePacks
@@ -107,70 +110,77 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		decoder = dRunner.Decoder()
 	}
 	/*
-			// Fetch specified decoder
-			decoder, ok = h.DecoderRunner(ni.conf.Decoder)
-			if !ok {
-				err := fmt.Errorf("Could not find decoder", ni.conf.Decoder)
-				return err
-			}
+	           // Fetch specified decoder
+	           decoder, ok = h.DecoderRunner(ni.conf.Decoder)
+	           if !ok {
+	                   err := fmt.Errorf("Could not find decoder", ni.conf.Decoder)
+	                   return err
+	           }
 
-			// Get the decoder's receiving chan
-			//decoding = decoder.InChan()
-		}
+	           // Get the decoder's receiving chan
+	           //decoding = decoder.InChan()
+	   }
 	*/
 	err = ni.nsqReader.ConnectToLookupd("192.168.1.44:4161")
 	if err != nil {
 		fmt.Errorf("ConnectToLookupd failed")
 	}
 
-	//header := &message.Header{}
+	header := &message.Header{}
 
 	//readLoop:
 	for {
 		pack = <-packSupply
 		m := <-ni.handler.logChan
-		//ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
-		pack.Message.SetType("nsq")
-		pack.Message.SetPayload(string(m.msg.Body))
-		pack.Message.SetTimestamp(time.Now().UnixNano())
-		var packs []*pipeline.PipelinePack
-		if decoder == nil {
-			packs = []*pipeline.PipelinePack{pack}
-		} else {
-			packs, e = decoder.Decode(pack)
-		}
-		if packs != nil {
-			for _, p := range packs {
-				ir.Inject(p)
+
+		if conf.Serialize {
+			if dRunner == nil {
+				pack.Recycle()
+				ir.LogError(errors.New("Serialize messages require a decoder."))
 			}
-		} else {
-			if e != nil {
-				ir.LogError(fmt.Errorf("Couldn't parse AMQP message: %s", m.msg.Body))
-			}
-			pack.Recycle()
-		}
-		m.returnChannel <- &nsq.FinishedMessage{m.msg.Id, 0, true}
-                /*
-                output[pos] = m
-		pos++
-		if pos == 2 {
-			for pos > 0 {
-				pos--
-				m1 := output[pos]
-				m1.returnChannel <- &nsq.FinishedMessage{m1.msg.Id, 0, true}
-				output[pos] = nil
-			}
-		}
-		*/
-		/*
 			_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
 			if msgOk {
-				decoding <- pack
+				dRunner.InChan() <- pack
 			} else {
 				pack.Recycle()
 				ir.LogError(errors.New("Can't find Heka message."))
 			}
 			header.Reset()
+		} else {
+
+			//ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
+			pack.Message.SetType("nsq")
+			pack.Message.SetPayload(string(m.msg.Body))
+			pack.Message.SetTimestamp(time.Now().UnixNano())
+			var packs []*pipeline.PipelinePack
+			if decoder == nil {
+				packs = []*pipeline.PipelinePack{pack}
+			} else {
+				packs, e = decoder.Decode(pack)
+			}
+			if packs != nil {
+				for _, p := range packs {
+					ir.Inject(p)
+				}
+			} else {
+				if e != nil {
+					ir.LogError(fmt.Errorf("Couldn't parse AMQP message: %s", m.msg.Body))
+				}
+				pack.Recycle()
+			}
+		}
+		m.returnChannel <- &nsq.FinishedMessage{m.msg.Id, 0, true}
+		/*
+		   output[pos] = m
+		   pos++
+		   if pos == 2 {
+		           for pos > 0 {
+		                   pos--
+		                   m1 := output[pos]
+		                   m1.returnChannel <- &nsq.FinishedMessage{m1.msg.Id, 0, true}
+		                   output[pos] = nil
+		           }
+		   }
 		*/
 	}
 	return nil
