@@ -69,31 +69,31 @@ func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok b
 		if len(buf)-pos > 1 {
 			headerLength := int(buf[pos+1])
 			headerEnd := pos + headerLength + 3 // recsep+len+header+unitsep
-			fmt.println("headerEnd:", headerEnd, "len(buf):", len(buf))
+			fmt.Println("headerEnd:", headerEnd, "len(buf):", len(buf))
 			if len(buf) >= headerEnd {
 				if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {
 					messageEnd := headerEnd + int(header.GetMessageLength())
-					fmt.println("messageEnd:", messageEnd)
+					fmt.Println("messageEnd:", messageEnd)
 					if len(buf) >= messageEnd {
-					        fmt.println("find msg success")
+					        fmt.Println("find msg success")
 						*msg = (*msg)[:messageEnd-headerEnd]
 						copy(*msg, buf[headerEnd:messageEnd])
 						pos = messageEnd
 						ok = true
 					} else {
-					        fmt.println("find msg failed 1")
+					        fmt.Println("find msg failed 1")
 						*msg = (*msg)[:0]
 					}
 				} else {
-				        fmt.println("find msg failed 2")
+				        fmt.Println("find msg failed 2")
 					pos, ok = findMessage(buf[pos+1:], header, msg)
 				}
-				fmt.println("find msg failed 3")
+				fmt.Println("find msg failed 3")
 			}
-			fmt.println("find msg failed 4")
+			fmt.Println("find msg failed 4")
 		}
 	} else {
-	        fmt.println("find msg failed 5")
+	        fmt.Println("find msg failed 5")
 		pos = len(buf)
 	}
 	return
