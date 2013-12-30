@@ -82,18 +82,22 @@ func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok b
 						ok = true
 					} else {
 					        fmt.Println("find msg failed 1")
-						*msg = (*msg)[:0]
+						//*msg = (*msg)[:0]
+						*msg = (*msg)[:len(buf)-headerEnd]
+						copy(*msg, buf[headerEnd:len(buf)])
+						pos = messageEnd
+						ok = true
 					}
 				} else {
 				        fmt.Println("find msg failed 2")
 					pos, ok = findMessage(buf[pos+1:], header, msg)
 				}
-				fmt.Println("find msg failed 3")
+				
 			}
-			fmt.Println("find msg failed 4")
+			
 		}
 	} else {
-	        fmt.Println("find msg failed 5")
+	        fmt.Println("find msg failed 3")
 		pos = len(buf)
 	}
 	return
