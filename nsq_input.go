@@ -2,7 +2,7 @@ package examples
 
 import (
 	"bytes"
-	//"errors"
+	"errors"
 	"fmt"
 	nsq "github.com/bitly/go-nsq"
 	"github.com/mozilla-services/heka/message"
