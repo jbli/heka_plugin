@@ -18,6 +18,7 @@ type Message struct {
 type NsqInputConfig struct {
 	Address   string `toml:"address"`
 	Topic     string `toml:"topic"`
+	Channel     string `toml:"channel"`
 	Serialize bool   `toml:"serialize"`
 	Decoder   string `toml:"decoder"`
 }
@@ -39,8 +40,9 @@ func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.
 
 func (ni *NsqInput) ConfigStruct() interface{} {
 	return &NsqInputConfig{
-		Address:   "192.168.1.44:4160",
+		Address:   "192.168.1.44:4161",
 		Topic:     "test",
+		Channel:     "test",
 		Serialize: "true",
 		Decoder:   "ProtobufDecoder",
 	}
@@ -50,7 +52,7 @@ func (ni *NsqInput) Init(config interface{}) error {
 	ni.conf = config.(*NsqInputConfig)
 	ni.stopChan = make(chan bool)
 	var err error
-	ni.nsqReader, err = nsq.NewReader("test123", "test")
+	ni.nsqReader, err = nsq.NewReader(ni.conf.Topic, ni.conf.Channel)
 	if err != nil {
 		//log.Fatalf(err.Error())
 		panic(err)
@@ -121,7 +123,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	           //decoding = decoder.InChan()
 	   }
 	*/
-	err = ni.nsqReader.ConnectToLookupd("192.168.1.44:4161")
+	err = ni.nsqReader.ConnectToLookupd(ni.conf.Address)
 	if err != nil {
 		fmt.Errorf("ConnectToLookupd failed")
 	}
