@@ -54,7 +54,7 @@ func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) erro
 				continue
 			}
 			//err := no.nsqwriter.PublishAsync(conf.Topic, []byte(pack.Message.GetPayload()), nil)
-			err := no.nsqwriter.PublishAsync(conf.Topic, []byte(msgBody), nil)
+			err := no.nsqwriter.PublishAsync(conf.Topic, msgBody, nil)
 			if err != nil {
 				or.LogError(fmt.Errorf("error in writer.PublishAsync"))
 			}
