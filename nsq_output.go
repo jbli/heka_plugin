@@ -23,7 +23,7 @@ func (no *NsqOutput) ConfigStruct() interface{} {
 	return &NsqOutputConfig{
 		Address:   "192.168.1.44:4160",
 		Topic:     "test",
-		Serialize: "true",
+		Serialize: true,
 	}
 }
 
@@ -33,7 +33,7 @@ func (no *NsqOutput) Init(config interface{}) error {
 	return nil
 }
 
-func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) error {
+func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) (err error) {
 	var (
 		encoder client.Encoder
 		msg     *message.Message
@@ -54,13 +54,13 @@ func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) erro
 				continue
 			}
 			//err := no.nsqwriter.PublishAsync(conf.Topic, []byte(pack.Message.GetPayload()), nil)
-			err := no.nsqwriter.PublishAsync(conf.Topic, msgBody, nil)
+			err = no.nsqwriter.PublishAsync(conf.Topic, msgBody, nil)
 			if err != nil {
 				or.LogError(fmt.Errorf("error in writer.PublishAsync"))
 			}
 			msgBody = msgBody[:0]
 		} else {
-			err := no.nsqwriter.PublishAsync(conf.Topic, []byte(pack.Message.GetPayload()), nil)
+			err = no.nsqwriter.PublishAsync(conf.Topic, []byte(pack.Message.GetPayload()), nil)
 			if err != nil {
 				or.LogError(fmt.Errorf("error in writer.PublishAsync"))
 			}
@@ -68,7 +68,7 @@ func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) erro
 		pack.Recycle()
 	}
 
-	return nil
+	return
 }
 
 func init() {
