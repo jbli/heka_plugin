@@ -129,7 +129,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	for {
 		pack = <-packSupply
 		m := <-ni.handler.logChan
-		ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
+		//ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
 		pack.Message.SetType("nsq")
 		pack.Message.SetPayload(string(m.msg.Body))
 		pack.Message.SetTimestamp(time.Now().UnixNano())
