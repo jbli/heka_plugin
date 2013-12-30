@@ -135,7 +135,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	for !stopped {
 		select {
 		case <-ni.stopChan:
-            r.LogError(errors.New("get ni.stopChan, set stopped=true")	
+                        ir.LogError(errors.New("get ni.stopChan, set stopped=true"))	
 			stopped = true
 		default:
 			pack = <-packSupply
