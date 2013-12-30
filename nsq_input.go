@@ -43,7 +43,7 @@ func (ni *NsqInput) ConfigStruct() interface{} {
 		Address:   "192.168.1.44:4161",
 		Topic:     "test",
 		Channel:     "test",
-		Serialize: "true",
+		Serialize:  true,
 		Decoder:   "ProtobufDecoder",
 	}
 }
@@ -135,7 +135,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		pack = <-packSupply
 		m := <-ni.handler.logChan
 
-		if conf.Serialize {
+		if ni.conf.Serialize {
 			if dRunner == nil {
 				pack.Recycle()
 				ir.LogError(errors.New("Serialize messages require a decoder."))
