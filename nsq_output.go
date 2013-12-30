@@ -44,7 +44,7 @@ func (no *NsqOutput) Run(or pipeline.OutputRunner, h pipeline.PluginHelper) (err
 	conf := no.conf
 	encoder = client.NewProtobufEncoder(nil)
 
-	for pack := range or.InChan() {
+	for pack = range or.InChan() {
 		if conf.Serialize {
 			msg = pack.Message
 			if err = encoder.EncodeMessageStream(msg, &msgBody); err != nil {
