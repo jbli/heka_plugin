@@ -151,7 +151,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	stopped := false
 	//readLoop:
 	for !stopped {
-	        stopped = true
+	        //stopped = true
 		select {
 		case <-ni.stopChan:
                         ir.LogError(errors.New("get ni.stopChan, set stopped=true"))	
