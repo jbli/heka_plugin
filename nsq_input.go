@@ -35,7 +35,7 @@ type MyTestHandler struct {
 }
 
 func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-        fmt.Printf("nsq.Message.body %+v", m.Body)
+	fmt.Printf("nsq.Message.body %+v", m.Body)
 	h.logChan <- &Message{m, responseChannel}
 }
 
@@ -64,47 +64,29 @@ func (ni *NsqInput) Init(config interface{}) error {
 	return nil
 }
 
-//func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
-func findMessage(buf []byte, msg *[]byte) (pos int, ok bool) {
-        header := message.Header{}
+func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
 	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
-	fmt.Println("pos:", pos)
 	if pos != -1 {
 		if len(buf)-pos > 1 {
 			headerLength := int(buf[pos+1])
 			headerEnd := pos + headerLength + 3 // recsep+len+header+unitsep
-			fmt.Println("headerEnd:", headerEnd, "len(buf):", len(buf))
 			if len(buf) >= headerEnd {
-				//if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {
-				if  pipeline.DecodeHeader(buf[pos+2:headerEnd], &header) {	
+				if header.MessageLength != nil || DecodeHeader(buf[pos+2:headerEnd], header) {
 					messageEnd := headerEnd + int(header.GetMessageLength())
-					//messageEnd := len(buf)
-					fmt.Println("messageEnd:", messageEnd)
 					if len(buf) >= messageEnd {
-					        fmt.Println("find msg success")
 						*msg = (*msg)[:messageEnd-headerEnd]
 						copy(*msg, buf[headerEnd:messageEnd])
 						pos = messageEnd
 						ok = true
 					} else {
-					        fmt.Println("find msg failed 1")
 						*msg = (*msg)[:0]
-						//*msg = (*msg)[:len(buf)-headerEnd]
-						//copy(*msg, buf[headerEnd:len(buf)])
-						//pos = messageEnd
-						//ok = true
 					}
 				} else {
-				        fmt.Println("find msg failed 2")
-					//pos, ok = findMessage(buf[pos+1:], header, msg)
-					pos, ok = findMessage(buf[pos+1:], msg)
+					pos, ok = findMessage(buf[pos+1:], header, msg)
 				}
-				
 			}
-			
 		}
 	} else {
-	        fmt.Println("find msg failed 3")
 		pos = len(buf)
 	}
 	return
@@ -123,39 +105,27 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 	//output := make([]*Message, 2)
 	packSupply := ir.InChan()
 
-	//var decoding chan<- *pipeline.PipelinePack
 	if ni.conf.Decoder != "" {
 		if dRunner, ok = h.DecoderRunner(ni.conf.Decoder); !ok {
 			return fmt.Errorf("Decoder not found: %s", ni.conf.Decoder)
 		}
 		decoder = dRunner.Decoder()
 	}
-	/*
-	           // Fetch specified decoder
-	           decoder, ok = h.DecoderRunner(ni.conf.Decoder)
-	           if !ok {
-	                   err := fmt.Errorf("Could not find decoder", ni.conf.Decoder)
-	                   return err
-	           }
 
-	           // Get the decoder's receiving chan
-	           //decoding = decoder.InChan()
-	   }
-	*/
 	err = ni.nsqReader.ConnectToLookupd(ni.conf.Address)
 	if err != nil {
 		ir.LogError(errors.New("ConnectToLookupd failed."))
 	}
 
-	//header := &message.Header{}
+	header := &message.Header{}
 
 	stopped := false
 	//readLoop:
 	for !stopped {
-	        //stopped = true
+		//stopped = true
 		select {
 		case <-ni.stopChan:
-                        ir.LogError(errors.New("get ni.stopChan, set stopped=true"))	
+			ir.LogError(errors.New("get ni.stopChan, set stopped=true"))
 			stopped = true
 		default:
 			pack = <-packSupply
@@ -167,17 +137,15 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 					ir.LogError(errors.New("Serialize messages require a decoder."))
 				}
 				//header := &message.Header{}
-				//_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
-				_, msgOk := findMessage(m.msg.Body,  &(pack.MsgBytes))
+				_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
 				if msgOk {
 					dRunner.InChan() <- pack
 				} else {
 					pack.Recycle()
 					ir.LogError(errors.New("Can't find Heka message."))
 				}
-				//header.Reset()
+				header.Reset()
 			} else {
-
 				//ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
 				pack.Message.SetType("nsq")
 				pack.Message.SetPayload(string(m.msg.Body))
@@ -194,7 +162,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 					}
 				} else {
 					if e != nil {
-						ir.LogError(fmt.Errorf("Couldn't parse AMQP message: %s", m.msg.Body))
+						ir.LogError(fmt.Errorf("Couldn't parse Nsq message: %s", m.msg.Body))
 					}
 					pack.Recycle()
 				}
@@ -227,3 +195,4 @@ func init() {
 		return new(NsqInput)
 	})
 }
+
