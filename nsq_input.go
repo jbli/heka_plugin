@@ -35,6 +35,7 @@ type MyTestHandler struct {
 }
 
 func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
+        fmt.Printf("nsq.Message.body %+v", m.Body)
 	h.logChan <- &Message{m, responseChannel}
 }
 
@@ -65,7 +66,7 @@ func (ni *NsqInput) Init(config interface{}) error {
 
 //func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
 func findMessage(buf []byte, msg *[]byte) (pos int, ok bool) {
-        header := &message.Header{}
+        header := message.Header{}
 	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
 	fmt.Println("pos:", pos)
 	if pos != -1 {
@@ -74,7 +75,7 @@ func findMessage(buf []byte, msg *[]byte) (pos int, ok bool) {
 			headerEnd := pos + headerLength + 3 // recsep+len+header+unitsep
 			fmt.Println("headerEnd:", headerEnd, "len(buf):", len(buf))
 			if len(buf) >= headerEnd {
-				//if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {
+				//if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], &header) {
 				if  pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {	
 					messageEnd := headerEnd + int(header.GetMessageLength())
 					//messageEnd := len(buf)
