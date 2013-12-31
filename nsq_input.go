@@ -63,7 +63,9 @@ func (ni *NsqInput) Init(config interface{}) error {
 	return nil
 }
 
-func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
+//func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
+func findMessage(buf []byte, msg *[]byte) (pos int, ok bool) {
+        header := &message.Header{}
 	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
 	fmt.Println("pos:", pos)
 	if pos != -1 {
@@ -159,8 +161,9 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 					pack.Recycle()
 					ir.LogError(errors.New("Serialize messages require a decoder."))
 				}
-				header := &message.Header{}
-				_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
+				//header := &message.Header{}
+				//_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
+				_, msgOk := findMessage(m.msg.Body,  &(pack.MsgBytes))
 				if msgOk {
 					dRunner.InChan() <- pack
 				} else {
