@@ -65,6 +65,7 @@ func (ni *NsqInput) Init(config interface{}) error {
 
 func findMessage(buf []byte, header *message.Header, msg *[]byte) (pos int, ok bool) {
 	pos = bytes.IndexByte(buf, message.RECORD_SEPARATOR)
+	fmt.Println("pos:", pos)
 	if pos != -1 {
 		if len(buf)-pos > 1 {
 			headerLength := int(buf[pos+1])
