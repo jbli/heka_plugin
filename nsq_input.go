@@ -141,7 +141,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 		ir.LogError(errors.New("ConnectToLookupd failed."))
 	}
 
-	header := &message.Header{}
+	//header := &message.Header{}
 
 	stopped := false
 	//readLoop:
@@ -159,6 +159,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 					pack.Recycle()
 					ir.LogError(errors.New("Serialize messages require a decoder."))
 				}
+				header := &message.Header{}
 				_, msgOk := findMessage(m.msg.Body, header, &(pack.MsgBytes))
 				if msgOk {
 					dRunner.InChan() <- pack
