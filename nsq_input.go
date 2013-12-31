@@ -75,8 +75,8 @@ func findMessage(buf []byte, msg *[]byte) (pos int, ok bool) {
 			headerEnd := pos + headerLength + 3 // recsep+len+header+unitsep
 			fmt.Println("headerEnd:", headerEnd, "len(buf):", len(buf))
 			if len(buf) >= headerEnd {
-				//if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], &header) {
-				if  pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {	
+				//if header.MessageLength != nil || pipeline.DecodeHeader(buf[pos+2:headerEnd], header) {
+				if  pipeline.DecodeHeader(buf[pos+2:headerEnd], &header) {	
 					messageEnd := headerEnd + int(header.GetMessageLength())
 					//messageEnd := len(buf)
 					fmt.Println("messageEnd:", messageEnd)
