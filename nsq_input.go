@@ -35,7 +35,7 @@ type MyTestHandler struct {
 }
 
 func (h *MyTestHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	fmt.Printf("nsq.Message.body %+v", m.Body)
+	//fmt.Printf("nsq.Message.body %+v", m.Body)
 	h.logChan <- &Message{m, responseChannel}
 }
 
