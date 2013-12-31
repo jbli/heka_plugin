@@ -93,7 +93,8 @@ func findMessage(buf []byte, msg *[]byte) (pos int, ok bool) {
 					}
 				} else {
 				        fmt.Println("find msg failed 2")
-					pos, ok = findMessage(buf[pos+1:], header, msg)
+					//pos, ok = findMessage(buf[pos+1:], header, msg)
+					pos, ok = findMessage(buf[pos+1:], msg)
 				}
 				
 			}
@@ -170,7 +171,7 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 					pack.Recycle()
 					ir.LogError(errors.New("Can't find Heka message."))
 				}
-				header.Reset()
+				//header.Reset()
 			} else {
 
 				//ir.LogError(fmt.Errorf("message body: %s", m.msg.Body))
