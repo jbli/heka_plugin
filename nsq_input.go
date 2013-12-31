@@ -129,7 +129,11 @@ func (ni *NsqInput) Run(ir pipeline.InputRunner, h pipeline.PluginHelper) error 
 			stopped = true
 		default:
 			pack = <-packSupply
-			m := <-ni.handler.logChan
+			m, ok1:= <-ni.handler.logChan
+			if !ok1 {
+			    stopped = true
+			    break
+			}
 
 			if ni.conf.Serialize {
 				if dRunner == nil {
