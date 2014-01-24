@@ -10,7 +10,11 @@ endif()
 加入
 
 ```
-add_external_plugin(git https://github.com/jbli/heka_plugin 61cfe8611b418803ca51304be1f62d041533d87c)
+add_external_plugin(git https://github.com/jbli/heka_plugin 5058ade894076a4ecd9efb467a2af270f6181dde)
+
+plugins:
+
+- 5058ade894076a4ecd9efb467a2af270f6181dde  udpout
 
 
 git_clone(https://github.com/adeven/redismq ec92d9cf876da73ed9659011d2a19c5ca325d2e7) 
