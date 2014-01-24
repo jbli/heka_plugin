@@ -56,6 +56,7 @@ func (o *UdpOutput) Run(runner pipeline.FilterRunner, helper pipeline.PluginHelp
 	var outgoing string
 	for pack := range runner.InChan() {
 		outgoing = fmt.Sprintf("%s\n", pack.Message.GetPayload())
+		fmt.Printf("outgoing:%s\n", outgoing)
 		o.conn.Write([]byte(outgoing))
 		pack.Recycle()
 	}
